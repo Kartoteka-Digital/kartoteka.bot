@@ -1,1 +1,1 @@
-# kartoteka.bot
+# bot
