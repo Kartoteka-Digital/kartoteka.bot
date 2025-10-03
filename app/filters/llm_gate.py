@@ -1,5 +1,3 @@
-"""Utilities for judging retrieval relevance with an LLM fallback."""
-
 from __future__ import annotations
 
 import os
@@ -10,7 +8,6 @@ from app.config import LLMRelevanceSettings, llm_gate_settings
 
 
 class RelevanceJudge(Protocol):
-    """Callable capable of returning a boolean relevance verdict."""
 
     def __call__(self, *, query: str, hit_text: str) -> bool:
         ...
@@ -18,7 +15,6 @@ class RelevanceJudge(Protocol):
 
 @dataclass
 class RetrievalHit:
-    """Simple container describing a retrieved chunk."""
     text: str
     score: float
     overlap: float
@@ -31,7 +27,6 @@ def llm_relevance_gate(
     settings: LLMRelevanceSettings | None = None,
     ask_relevance_llm: Callable[..., bool] | None = None,
 ) -> bool:
-    """Return ``True`` when the hit passes the relevance filter."""
 
     cfg = settings or llm_gate_settings()
     judge = ask_relevance_llm or _ask_relevance_llm
@@ -79,7 +74,6 @@ def _ask_relevance_llm(
     settings: LLMRelevanceSettings,
     llm_client: RelevanceJudge | None = None,
 ) -> bool:
-    """Ask the LLM (or a heuristic stand-in) whether the hit is relevant."""
 
     judge = llm_client
     if judge is None and os.getenv("LLM_GATE_USE_LLM", "0") == "1":

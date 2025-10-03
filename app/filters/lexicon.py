@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
-
-from typing import Set, Any
+from typing import Any
 
 DOMAIN_KEYWORDS: set[str | Any] = {
     "шлем","гарнитура","xr","vr",

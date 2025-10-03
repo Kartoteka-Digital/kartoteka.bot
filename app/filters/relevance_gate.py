@@ -1,5 +1,4 @@
 # app/filters/relevance_gate.py
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Callable
@@ -14,13 +13,11 @@ from app.filters.rules import parse_question, NLUResult
 logger = logging.getLogger(__name__)
 
 try:
-    # используем тот же поиск, что и раньше
     from app.rag.vector_store import search as _rag_search
 except Exception as exc:  # pragma: no cover
     _rag_search = None
     logger.warning("RAG поиск недоступен: %s", exc)
 
-# ---- ENV-настройки ранних проверок (не про LLM gate) ----
 MIN_WORDS = int(os.getenv("ASK_MIN_WORDS", 2))
 MIN_CHARS = int(os.getenv("ASK_MIN_CHARS", 8))
 OFFTOP_THRESHOLD = float(os.getenv("ASK_OFFTOP_THRESHOLD", 0.2))

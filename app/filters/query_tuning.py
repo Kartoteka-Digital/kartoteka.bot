@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from typing import List, Dict, Tuple, Optional
 from .rules import parse_question, NLUResult
 
@@ -7,14 +6,12 @@ def _extract_tail_keywords(chat_tail: Optional[str]) -> List[str]:
         return []
 
     keywords: List[str] = []
-    # Разбираем только пользовательские реплики («Пользователь: …»)
     tail_lines = [
         line.split(":", 1)[1].strip()
         for line in chat_tail.splitlines()
         if line.strip().lower().startswith("пользователь:")
     ]
 
-    # Берём несколько последних вопросов пользователя — они ближе всего к анафоре.
     for utterance in tail_lines[-3:]:
         if not utterance:
             continue
@@ -46,7 +43,6 @@ def rewrite_query(original: str, chat_tail: Optional[str] = None) -> Tuple[str, 
     tail_keywords = _extract_tail_keywords(chat_tail)
     if tail_keywords:
         q2 += " " + " ".join(tail_keywords)
-        # универсальная подсказка
     return q2, nlu
 
 def _contains_all(text_low: str, phrase: str) -> bool:

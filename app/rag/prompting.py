@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 from typing import Optional, Dict, List
-from textwrap import dedent
 
 from app.rag.prompt_loader import load_base_prompt, load_static_policy
 

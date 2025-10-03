@@ -10,7 +10,6 @@ from aiogram.types import Message
 
 from collections import defaultdict, deque
 from app.rag.rag import answer
-# from app.filters.heuristics import early_gate
 from app.rag.vector_store import search as vec_search
 from app.rag.vector_store import warmup_vector_store
 from app.filters.relevance_gate import RelevanceGate
@@ -37,15 +36,13 @@ def smart_search(q: str):
     if not USE_RETRIEVAL_PIPELINE:
         return hits
     if not hits:
-        # нет совпадений — пробуем «умный» пайплайн
         return retrieve_with_rerank(q)[1]
 
-    # 2) если уверенность низкая — подключаем пайплайн
     best = float(hits[0].get("score", 0.0))
     if best < SMART_PIPELINE_THRESHOLD:
         return retrieve_with_rerank(q)[1]
 
-    # 3) иначе остаёмся на быстром поиске
+
     return hits
 
 CHAT_TAIL: dict[int, deque[str]] = defaultdict(lambda: deque(maxlen=4)) # 4 последние реплики
@@ -57,7 +54,6 @@ async def start(m: Message):
         "⏳ Пожалуйста, имей в виду: иногда ответ может занять чуть больше времени."
     )
 
-# bot.py — обработчик ask_cmd: заменяем early_gate(...) на gate.check(...)
 @dp.message(Command("ask"))
 async def ask_cmd(m: Message):
     parts = m.text.split(maxsplit=1)

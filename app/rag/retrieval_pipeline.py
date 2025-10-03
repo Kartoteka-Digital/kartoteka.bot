@@ -1,5 +1,4 @@
 # app/rag/retrieval_pipeline.py
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 from typing import List, Dict, Tuple, Optional
 import os
@@ -13,7 +12,6 @@ from app.rag.vector_store import search as _vec_search, search_batch as _vec_sea
 
 logger = logging.getLogger(__name__)
 
-# === ENV-переключатели ===
 TOP_K = int(os.getenv("TOP_K", 4))
 RETRIEVE_TOP_K = int(os.getenv("RETRIEVE_TOP_K", 4))
 CE_MODEL = os.getenv("CROSS_ENCODER_MODEL", "")  # напр. "cross-encoder/ms-marco-MiniLM-L-6-v2"
@@ -21,7 +19,6 @@ CE_BATCH = int(os.getenv("CROSS_ENCODER_BATCH", 32))
 CE_WEIGHT = float(os.getenv("CROSS_ENCODER_WEIGHT", 0.55))  # вклад CE в итоговый скор
 FAISS_WEIGHT = 1.0 - CE_WEIGHT
 
-# ленивое подключение cross-encoder (если задан)
 _CE = None
 def _get_cross_encoder():
     global _CE
@@ -35,39 +32,28 @@ def _get_cross_encoder():
             _CE = None
     return _CE
 
-# -------------------- Утилиты --------------------
 
 def _normalize_query(q: str) -> str:
-    """Простая нормализация + мягкая перезапись (замена частых формулировок)."""
     q = (q or "").strip()
     q = re.sub(r"\s+", " ", q)
-    # примеры мягкой переписи — адаптируй под свой домен
     q = q.replace("как найти папку со скриншотами", "где папка со скриншотами")
     q = q.replace("как поставить apk", "установка apk файл")
     return q
 
 def _expand_query(base: str) -> List[str]:
-    """
-    Лёгкий query expansion:
-    - добавляем доменные синонимы по ключевым словам
-    - варианты «где/как/путь/папка/скриншоты»
-    """
     base_l = base.lower()
     variants = {base}
 
-    # частые рус/англ варианты для файловой темы
     if any(w in base_l for w in ("папк", "путь", "скрин", "screenshots", "oculus")):
         variants.add(base_l.replace("где", "путь к").strip())
         variants.add(base_l + " oculus/screenshots")
         variants.add(base_l + " android/data")
 
-    # доменные ключи (очень мягко)
     for kw in DOMAIN_KEYWORDS:
         if kw in base_l:
             variants.add(base_l.replace(kw, kw + " инструкция"))
             variants.add(base_l.replace(kw, kw + " путь"))
 
-    # очистим и ограничим
     out = []
     for v in variants:
         v2 = re.sub(r"\s+", " ", v).strip()
@@ -117,7 +103,6 @@ def _ce_rerank(query: str, hits: List[Dict]) -> List[Dict]:
         hits.sort(key=lambda x: x["combined_score"], reverse=True)
         return hits
 
-    # CE доступен — считаем баллы
     pairs = [(query, h.get("text") or "") for h in hits]
     try:
         scores = ce.predict(pairs, batch_size=CE_BATCH)
@@ -149,16 +134,13 @@ def _ce_rerank(query: str, hits: List[Dict]) -> List[Dict]:
     hits.sort(key=lambda x: x["combined_score"], reverse=True)
     return hits
 
-# -------------------- Публичный API --------------------
 
-# retrieval_pipeline.py (добавьте рядом с ENV)
 FAST_MODE = os.getenv("FAST_MODE", "1") == "1"
 FAST_TOP_SCORE = float(os.getenv("FAST_TOP_SCORE", "0.83"))  # порог «и так хорошо»
 
 def retrieve_with_rerank(query: str, *, chat_tail: Optional[str] = None, k: int = RETRIEVE_TOP_K) -> Tuple[str, List[Dict]]:
     q2 = _normalize_query(query)
 
-    # --- ❶ Быстрый путь: один поиск, без expansion/CE ---
     if FAST_MODE:
         try:
             hits_fast = _vec_search(q2, k=k)
@@ -173,7 +155,6 @@ def retrieve_with_rerank(query: str, *, chat_tail: Optional[str] = None, k: int 
                     h["combined_score"] = float(h.get("score", 0.0))
                 return q2, hits_fast
 
-    # --- ❷ Медленный путь: expansion + merge + (опц.) CE ---
     variants = _expand_query(q2)
     try:
         all_lists = _vec_search_batch(variants, k=k)  # ← вместо цикла по _vec_search

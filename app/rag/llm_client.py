@@ -1,4 +1,3 @@
-# Обёртка над OpenAI-совместимым клиентом
 import os
 from typing import Any, TYPE_CHECKING
 

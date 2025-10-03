@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Сбор *.md → чанкинг (≈700 токенов, overlap 100) → эмбеддинги BAAI/bge-m3 → FAISS (cosine).
-На выходе: index.faiss и meta.json в каталоге OUT_DIR.
-"""
+
 import os
 import json
 import glob
@@ -13,9 +9,7 @@ from typing import List, Dict, Tuple
 import numpy as np
 from tqdm import tqdm
 
-# эмбеддинги
 from sentence_transformers import SentenceTransformer
-# токенизатор для подсчёта токенов в bge-m3
 from transformers import AutoTokenizer
 
 # FAISS

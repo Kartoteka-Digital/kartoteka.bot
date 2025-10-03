@@ -1,5 +1,4 @@
 # app/rag/answer_engine.py
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 from typing import Optional, Dict, List
@@ -48,18 +47,15 @@ class AnswerEngine:
         self.client = get_client()
         self.model = get_model_name()
 
-    # ---------- Вспомогательные ----------
     def _display_title(self, h: Dict) -> str:
         title = (h.get("title") or Path(h["file"]).stem).strip()
         return Path(title).stem if title.lower().endswith(".md") else title
 
     def _extract_keywords(self, text: str) -> set[str]:
-        """Грубое извлечение ключевых токенов."""
         tokens = re.findall(r'\b[а-яёa-z0-9]+(?:[-/][а-яёa-z0-9]+)*\b', (text or "").lower())
         return {t for t in tokens if len(t) > 2}
 
     def _lexical_overlap(self, query: str, text: str) -> float:
-        """Доля пересечения ключевых токенов query и текста."""
         q = self._extract_keywords(query)
         t = self._extract_keywords(text or "")
         return (len(q & t) / len(q)) if q else 0.0
@@ -72,10 +68,6 @@ class AnswerEngine:
             answer_kw: set[str],
             specific_matches: Dict[re.Pattern, List[str]],
     ) -> float:
-        """
-        Проверяем, насколько ответ использует конкретный источник.
-        Возвращает score от 0 до 1.
-        """
         source_text = (hit.get("text") or "").lower()
         source_title = (hit.get("title") or "").lower()
 
@@ -201,7 +193,6 @@ class AnswerEngine:
             })
         return links, all_items
 
-    # ---------- Основной метод ----------
     def answer(
             self,
             question: str,
@@ -225,8 +216,6 @@ class AnswerEngine:
                 len(hits),
             )
         else:
-            # Легаси-фолбэк: если кто-то вызвал движок напрямую, без гейта,
-            # всё ещё попробуем поиск по исходному вопросу.
             logger.debug("AnswerEngine.answer: нет префетченных результатов — запускаем поиск для %r", question)
             hits = search(question)
 
@@ -238,7 +227,7 @@ class AnswerEngine:
         if not context.strip():
             return no_answer_payload
 
-        # 3) Промпт (NLU не нужен — гейт уже решил релевантность)
+        # 3) Промпт
         messages = build_messages(
             context=context,
             question=question,

@@ -1,5 +1,4 @@
 # app/rag/vector_store.py
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import os
@@ -23,14 +22,12 @@ EMB_MODEL = os.environ.get("EMB_MODEL", "BAAI/bge-m3")
 TOP_K = int(os.environ.get("TOP_K", 4))
 RETRIEVE_TOP_K = int(os.environ.get("RETRIEVE_TOP_K", 4))
 
-# ====== ленивые синглтоны ======
 _METAS: Optional[List[Dict]] = None
 _INDEX = None
 _EMB: Optional[SentenceTransformer] = None
 
 
 def warmup_vector_store():
-    """Подгрузить все ленивые зависимости заранее (опционально)."""
     _load_metas()
     _load_index()
     _load_emb()
@@ -58,7 +55,6 @@ def _load_emb() -> SentenceTransformer:
     return _EMB
 
 
-# ====== модель данных одного хита (необязательно использовать снаружи) ======
 @dataclass
 class Hit:
     rank: int
@@ -87,9 +83,7 @@ def _make_hit(m: Dict, rank: int, score: float) -> Dict:
     ).to_dict()
 
 
-# ====== публичные функции поиска ======
 def search(query: str, k: int = TOP_K) -> List[Dict]:
-    """Поиск по одному запросу, топ-k результатов."""
     metas = _load_metas()
     index = _load_index()
     emb = _load_emb()
