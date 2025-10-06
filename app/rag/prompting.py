@@ -1,14 +1,31 @@
 from __future__ import annotations
 from typing import Optional, Dict, List
-
+import re
 from app.rag.prompt_loader import load_base_prompt, load_static_policy
 
-def build_context(hits, max_chars: int = 8000) -> str:
-    parts = []
+MD_NAME_RE = re.compile(r"[«\"']?[\w\s\-/()]+\.md[»\"']?", re.IGNORECASE)
+SECTION_REF_RE = re.compile(r"(?:в\s+разделе|см\.\s*раздел|смотрите\s+раздел)\s+[«\"']?[^»\"'\n]+[»\"']?",
+                            re.IGNORECASE)
+
+def _strip_md_refs(s: str) -> str:
+    if not s:
+        return s
+    s = SECTION_REF_RE.sub("в документации", s)
+    s = MD_NAME_RE.sub("документации", s)
+    return s
+
+def build_context(hits, max_chars: int = 8000, hide_titles: bool = True) -> str:
+    parts: List[str] = []
     for h in hits:
-        if h.get("text"):
-            parts.append(f"### {h['title']}\n{h['text']}\n")
-    return "\n\n".join(parts)[:max_chars]
+        txt = _strip_md_refs((h.get("text") or "").strip())
+        if not txt:
+            continue
+        if hide_titles:
+            parts.append(txt + "\n")
+        else:
+            title = _strip_md_refs((h.get("title") or "").strip())
+            parts.append(f"### {title}\n{txt}\n")
+    return ("\n\n---\n\n".join(parts))[:max_chars]
 
 def _build_dynamic_policy(nlu: Optional[Dict]) -> str:
     if not nlu:
