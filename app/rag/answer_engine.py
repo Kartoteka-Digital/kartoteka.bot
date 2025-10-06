@@ -178,7 +178,7 @@ class AnswerEngine:
 
         links, seen_urls = [], set()
         for it in selected_items:
-            url = (it.get("url") or "").strip()
+            url: str = str(it.get("url") or "").strip()
             if not url or url in seen_urls:
                 continue
             seen_urls.add(url)

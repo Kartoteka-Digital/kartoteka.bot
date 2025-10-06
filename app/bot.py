@@ -14,6 +14,7 @@ from app.rag.vector_store import search as vec_search
 from app.rag.vector_store import warmup_vector_store
 from app.filters.relevance_gate import RelevanceGate
 from app.rag.retrieval_pipeline import retrieve_with_rerank
+from app.thinkingMessage import thinkingMessage
 
 import logging
 from openai import APIError, APIConnectionError, RateLimitError
@@ -64,25 +65,30 @@ async def ask_cmd(m: Message):
         search_fn=smart_search,  # единая точка поиска
     )
     if not verdict.allow:
-        await m.answer(verdict.reason or "Пожалуйста, уточни вопрос по документации.")
+        await m.answer(verdict.reason or "😕 Пожалуйста, уточни вопрос по документации.")
         return
 
-    await m.chat.do("typing")
+    async with thinkingMessage(m, "🤔 Думаю…"):
+        await m.chat.do("typing")
 
-    try:
-        out = answer(
-            user_q,
-            chat_tail="\n".join(CHAT_TAIL[m.chat.id]),
-            prefetched_hits=verdict.hits,  # уже проверенные и релевантные
-        )
-    except (APIError, APIConnectionError, RateLimitError):
-        logging.exception("Ошибка при ответе")
-        await m.answer("Упс! Что-то пошло не так. Попробуй ещё раз или уточни вопрос.")
-        return
+        try:
+            # answer() — синхронная функция, чтобы не блокировать event loop, выполняем в фоне
+            out = await asyncio.to_thread(
+                answer,
+                user_q,
+                "\n".join(CHAT_TAIL[m.chat.id]),
+                verdict.hits,  # уже проверенные и релевантные
+            )
+        except (APIError, APIConnectionError, RateLimitError):
+            logging.exception("Ошибка при ответе")
+            await m.answer("😕 Упс! Что-то пошло не так. Попробуй ещё раз или уточни вопрос.")
+            return
+
 
     CHAT_TAIL[m.chat.id].append(f"Пользователь: {user_q}\nБот: {out['answer']}")
     await m.answer(out["answer"])
 
+    # 🔗 источники (если есть)
     if out.get("links"):
         seen, lines = set(), []
         i = 1
@@ -100,10 +106,8 @@ async def ask_cmd(m: Message):
         if lines:
             await m.answer("🔗 Возможные источники:\n" + "\n".join(lines), disable_web_page_preview=True)
 
-
-@dp.message(F.text)
+@dp.message(F.text & ~F.text.startswith("/"))
 async def any_text(m: Message):
-    # любой текст — как вопрос
     await ask_cmd(m)
 
 async def main():

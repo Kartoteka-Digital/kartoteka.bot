@@ -30,6 +30,8 @@ def _build_dynamic_policy(nlu: Optional[Dict]) -> str:
         if fterms:
             bullets.append(f"Начни с краткого определения: «{fterms[0]}» (1–2 предложения).")
 
+    bullets.append("Не упоминай названия файлов/разделов .md; при необходимости говори просто «в документации».")
+
     if not bullets:
         return ""
 

@@ -1,4 +1,3 @@
-# app/filters/relevance_gate.py
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Callable

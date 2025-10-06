@@ -3,8 +3,7 @@ from typing import Any
 
 DOMAIN_KEYWORDS: set[str | Any] = {
     "шлем","гарнитура","xr","vr",
-    "quest","quest 2","quest2","quest 3","meta quest",
-    "kabina","кабина",
+    "quest","quest 2","quest2","quest 3","meta quest", "очки",
     "обновление","установка","apk","adb","usb","wi-fi","pairdrop",
     "обмен файлами","сторонние приложения","настройки","контроллер",
     "скриншот","скриншоты","видео","папка","путь"
